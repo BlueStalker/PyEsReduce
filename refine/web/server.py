@@ -11,6 +11,7 @@ import argparse
 
 from refine.web.app import app
 from refine.web.extensions import RedisDB
+from refine.app.utils import listen
 
 def main(arguments=None):
     '''Runs Surifki Refine web app with the specified arguments.'''
@@ -43,6 +44,7 @@ def main(arguments=None):
     try:
         logging.debug('PyEsReduce Refine web app running at %s:%d' % (args.bind, args.port))
         print(app.config)
+        listen()
         app.run(debug=args.debug, host=app.config['WEB_HOST'], port=app.config['WEB_PORT'])
     except KeyboardInterrupt:
         print

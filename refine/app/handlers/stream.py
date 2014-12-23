@@ -47,9 +47,10 @@ class StreamHandler(BaseHandler):
                 self.redis.set(job_status, "STREAMING")
                 input_stream = self.application.input_streams[job_key]
                 items = input_stream.process(self.application, arguments)
+                logging.warning("before group, total item size is %d" %(len(items)))
                 if hasattr(input_stream, 'group_size'):
                     items = self.group_items(items, input_stream.group_size)
-
+                logging.warning("after group, total item size is %d" %(len(items)))
                 mapper_input_queue = MAPPER_INPUT_KEY % job_key
                 mapper_output_queue = MAPPER_OUTPUT_KEY % (job_key, job_id)
                 mapper_error_queue = MAPPER_ERROR_KEY % job_key
@@ -67,23 +68,36 @@ class StreamHandler(BaseHandler):
                         }
                         pipe.rpush(mapper_input_queue, dumps(msg))
                     pipe.execute()
-                logging.debug("input queue took %.2f" % (time.time() - start))
+                logging.warning("input queue took %.2f" % (time.time() - start))
                 self.redis.set(job_status, "MAPPING")
                 start = time.time()
                 results = []
                 errored = False
+                retry = 3
                 while (len(results) < len(items)):
-                    key, item = self.redis.blpop(mapper_output_queue)
-                    json_item = loads(item)
-                    if 'error' in json_item:
-                        json_item['retries'] -= 1
-                        self.redis.hset(mapper_error_queue, json_item['job_id'], dumps(json_item))
-                        errored = True
-                        break
-                    results.append(loads(json_item['result']))
-
+                #    logging.warning("During mapping, items size %d, results size %d" %(len(items), len(results)))
+                    output = self.redis.blpop(mapper_output_queue, timeout=5)
+                    if output:
+                        retry = 3
+                        key, item = output
+                        json_item = loads(item)
+                        if 'error' in json_item:
+                            logging.warning("error occurred in mapping")
+                            json_item['retries'] -= 1
+                            self.redis.hset(mapper_error_queue, json_item['job_id'], dumps(json_item))
+                            errored = True
+                            break
+                        oldresults = len(results)
+                        results.append(loads(json_item['result']))
+                        newresults = len(results)
+                    else:
+                        retry = retry - 1
+                        if retry <= 0:
+                            logging.warning("error occurred in mapping, mapper has long time no return")
+                            self.redis.delete(mapper_input_queue)
+                            break
                 self.redis.delete(mapper_output_queue)
-                logging.debug("map took %.2f" % (time.time() - start))
+                logging.warning("map took %.2f" % (time.time() - start))
                 if errored:
                     self.redis.incr(PROCESSED)
                     self.redis.incr(PROCESSED_FAILED)
@@ -95,7 +109,7 @@ class StreamHandler(BaseHandler):
                     self.redis.set(job_status, "REDUCING")
                     reducer = self.application.reducers[job_key]
                     result = reducer.reduce(self.application, results)
-                    logging.debug("reduce took %.2f" % (time.time() - start))
+                    logging.warning("reduce took %.2f" % (time.time() - start))
 
                     self.set_header('Content-Type', 'application/json')
 

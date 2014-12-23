@@ -12,11 +12,11 @@ import sys
 import os
 import argparse
 import time
-
+import code, traceback, signal
 import redis
 from ujson import loads, dumps
 
-from refine.app.utils import DATETIME_FORMAT, kls_import
+from refine.app.utils import DATETIME_FORMAT, kls_import, listen
 from refine.app.keys import WORKING_KEY, MAPPERS_KEY, JOB_TYPES_KEY, MAPPER_INPUT_KEY, MAPPER_WORKING_KEY, LAST_PING_KEY
 
 class JobError(RuntimeError):
@@ -74,6 +74,7 @@ class Mapper:
             while True:
                 self.ping()
                 logging.debug('waiting to process next item...')
+                #print "waiting to process next item..."
                 values = self.redis.brpop(self.input_queue, timeout=5)
                 if values:
                     key, item = values
@@ -93,14 +94,14 @@ class Mapper:
         self.redis.set(LAST_PING_KEY % self.full_name, datetime.now().strftime(DATETIME_FORMAT))
 
     def map_item(self, item, json_item):
-        self.redis.set(WORKING_KEY % self.full_name, json_item['job_id'])
+        #self.redis.set(WORKING_KEY % self.full_name, json_item['job_id'])
         self.redis.rpush(self.working_queue, item)
         result = dumps(self.map(json_item['item']))
         self.redis.rpush(json_item['output_queue'], dumps({
             'result': result
         }))
         self.redis.delete(self.working_queue)
-        self.redis.delete(WORKING_KEY % self.full_name)
+        #self.redis.delete(WORKING_KEY % self.full_name)
 
 def main(arguments=None):
     if not arguments:
@@ -130,6 +131,7 @@ def main(arguments=None):
 
     mapper = klass(klass.job_type, args.mapper_key, redis_host=args.redis_host, redis_port=args.redis_port, redis_db=args.redis_db, redis_pass=args.redis_pass)
     try:
+        listen()
         mapper.run_block()
     except KeyboardInterrupt:
         print

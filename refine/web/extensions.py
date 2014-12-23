@@ -36,7 +36,7 @@ class RedisDB(object):
 
         if self.app.config['REDIS_PASS']:
             options['password'] = self.app.config['REDIS_PASS']
-
+        
         conn = redis.StrictRedis(**options)
         return conn
 

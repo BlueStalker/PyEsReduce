@@ -5,7 +5,7 @@
 DEBUG=True
 SECRET_KEY='development key'
 
-WEB_HOST='ec2-54-89-192-31.compute-1.amazonaws.com'
+WEB_HOST='ec2-54-243-246-138.compute-1.amazonaws.com'
 WEB_PORT=80
 UPLOAD_FOLDER='/root/refine/jobs/refine/'
 
