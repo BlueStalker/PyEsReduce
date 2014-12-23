@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <title>PyEsReduce Refine{% block title %}{% endblock %}</title>
+  <link rel="icon" type="image/ico" href="{{ url_for('static', filename='img/favicon.ico') }}"/>
+  {%  block css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" type="text/css" media="screen" charset="utf-8">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/progress.css') }}" type="text/css" media="screen" charset="utf-8">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css" media="screen" charset="utf-8">
+  {% endblock %}
+  <style type="text/css" media="screen">
+      body {
+        padding-bottom: 0px;
+      }
+      
+      .body {
+        margin: 0px;
+      }
+      
+      .navbar {
+        margin-bottom: 0px;
+      }
+
+      .body div {
+      	overflow: auto;
+      }
+      
+  </style>
+</head>
+<body>
+  <div class="navbar navbar-top">
+    <div class="navbar-inner">
+      <div class="container pull-right">
+        <ul class="nav">
+          <li class="logo"> <a href="http://www.elasticsearch.org/"><img src="{{ url_for('static', filename='img/elastic-logo.png') }}" style="height: 35px;"></a> </li>
+        </ul>
+      </div>
+      <div class="container">
+        <ul class="nav">
+        <!--<li class="logo"><a href="/"><img src="{{ url_for('static', filename='img/PyEsReduce-logo.png') }}" style="height: 35px;"></a> </li> -->
+        </ul>
+      </div>
+    </div>
+  
+  <div class="body">
+    <iframe id="cloud9" src="http://{{ g.config.WEB_HOST }}:3131{% if g.currentfile %}/#{{g.currentfile}}{% endif %}"></iframe>   
+  </div>
+
+  <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-1.7.2.min.js') }}" charset="utf-8"></script>
+  <!--script type="text/javascript" src="{{ url_for('static', filename='js/splitter.js') }}"></script-->
+  <script type="text/javascript">
+  $().ready(function() {
+    window.addEventListener("message", function(e) {
+      if (e.data === "exit") {
+        window.location.href = "http://{{ g.config.WEB_HOST }}:{{ g.config.WEB_PORT }}/#tab-jobs";
+      }
+    }, false);
+    
+    var waitForFinalEvent = (function () {
+      var timers = {};
+      return function (callback, ms, uniqueId) {
+        if (!uniqueId) {
+          uniqueId = "Don't call this twice without a uniqueId";
+        }
+        if (timers[uniqueId]) {
+          clearTimeout (timers[uniqueId]);
+        }
+        timers[uniqueId] = setTimeout(callback, ms);
+      };
+    })();
+    
+    function size() {
+      var width = $(window).width();
+      var height = $(window).height();
+
+      $("#cloud9").width(width);
+      $("#cloud9").height(height);
+      
+      $(".body").width(width);
+      $(".body").height(height-60); 
+    }
+    
+    size();
+  });
+  </script>
+</body>
+</html>
+

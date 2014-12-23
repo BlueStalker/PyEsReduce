@@ -1,0 +1,16 @@
+redis
+tornado
+tornado-redis
+ujson
+flask
+argparse
+hiredis
+pyflakes
+pyelasticsearch
+watchdog
+psutil
+numpy
+nltk
+pip install flask-httpauth
+
+
