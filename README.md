@@ -14,4 +14,7 @@ Make sure it's running, you may change the config file a little bit, eg. The dat
 
 run ./server_startup.sh and you are ready to go
 
+Following is Simple Architecture graph to show how it works:
+![Simple Architecture](https://github.com/BlueStalker/PyEsReduce/blob/master/PyEsSimpleArch.png)
+
 
