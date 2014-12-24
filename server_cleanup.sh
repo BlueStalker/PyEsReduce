@@ -9,7 +9,7 @@ function getPropertyFromFile()
 pkill python
 port=`getPropertyFromFile REDIS_PORT ./refine/web/config.py`
 redis-cli -p $port -a PyEsReduce  KEYS "*" | xargs redis-cli -p $port -a PyEsReduce DEL
-for file in `ls /root/refine/jobs/refine`
+for file in `ls ${WORKDIR}/jobs/refine`
 do
   if [[ "$file" != template ]]; then
     echo $file

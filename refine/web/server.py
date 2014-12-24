@@ -48,7 +48,7 @@ def main(arguments=None):
         app.run(debug=args.debug, host=app.config['WEB_HOST'], port=app.config['WEB_PORT'])
     except KeyboardInterrupt:
         print
-        print "-- Surifki Refine web app closed by user interruption --"
+        print "-- PyEsReduce Refine web app closed by user interruption --"
 
 if __name__ == "__main__":
     main(sys.argv[1:])

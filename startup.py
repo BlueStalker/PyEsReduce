@@ -23,7 +23,7 @@ def job_port(type):
     return res
 
 def run_job(jobtype):
-    for r,d,f in os.walk("/root/refine/jobs/refine/"+jobtype):
+    for r,d,f in os.walk(upload_foloder + jobtype):
         for files in f:
             if files.endswith("_mapper.py"):
                 filename = files
@@ -36,6 +36,11 @@ def run_job(jobtype):
     os.popen('python refine/app/server.py --redis-port='+port+' -p '+ job_port(jobtype) + ' --redis-pass=PyEsReduce --config-file=jobs/refine/' + jobtype + '/app_config.py &')
     os.popen('python refine/worker/mapper.py --mapper-key=map-key-'+jobtype+'1 --mapper-class='+jobtype+'.'+mapperclass+' --redis-port='+port+' --redis-pass=PyEsReduce &')
 
+
+workdir = os.environ['WORKDIR']
+upload_foloder = workdir + '/jobs/refine/'
+
+
 fp = open("./refine/web/config.py")
 port="7778"
 for line in fp.readlines():
@@ -46,13 +51,15 @@ fp.close()
 currentTime = strftime("%Y-%m-%d", gmtime())
 os.popen('python refine/web/server.py --redis-port={port} --redis-pass=PyEsReduce' \
     ' --config-file=./refine/web/config.py > /var/log/PyEsReduce/PyESRefine_{currentTime}.log 2>&1 &'.format(port=port, currentTime=currentTime))
-f = open("/var/spool/cron/crontabs/root")
-for line in f.readlines():
-    line = str(line.strip('\n'))
-    if "XGET" in line:
-        lines = line.split("/")
-        last = lines[len(lines) - 1]
-        jobtype = last[0:last.index('.')]
-        run_job(jobtype)
-f.close()
+
+# The following logic handle the scheduled job on Linux only. Disable it for Mac 
+#f = open("/var/spool/cron/crontabs/root")
+#for line in f.readlines():
+#    line = str(line.strip('\n'))
+#    if "XGET" in line:
+#        lines = line.split("/")
+#        last = lines[len(lines) - 1]
+#        jobtype = last[0:last.index('.')]
+#        run_job(jobtype)
+#f.close()
 

@@ -5,9 +5,8 @@
 DEBUG=True
 SECRET_KEY='development key'
 
-WEB_HOST='ec2-54-243-246-138.compute-1.amazonaws.com'
-WEB_PORT=80
-UPLOAD_FOLDER='/root/refine/jobs/refine/'
+WEB_HOST='localhost'
+WEB_PORT=8080
 
 REDIS_HOST='0.0.0.0'
 REDIS_PORT=6379

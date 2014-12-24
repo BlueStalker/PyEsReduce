@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-import os, subprocess
+import subprocess
 import shutil
 import re
 import time
@@ -32,6 +32,9 @@ app.permanent_session_lifetime = timedelta(seconds=300)
 
 auth = HTTPDigestAuth()
 
+workdir = os.environ['WORKDIR']
+upload_foloder = workdir + '/jobs/refine/'
+
 # The users and credentials we are using for Http Basic Auth on the project
 users = {
     "admin": "Rene91970Tony6472"
@@ -44,7 +47,7 @@ def get_pw(username):
     return None
 
 def job_desc(type):
-    f = open(app.config['UPLOAD_FOLDER'] + type + "/app_config.py")
+    f = open(upload_foloder + type + "/app_config.py")
     desc = ""
     for line in f.readlines():
         line = str(line.strip('\n'))
@@ -54,7 +57,7 @@ def job_desc(type):
     return desc
 
 def update_desc(type, desc):
-    filename = app.config['UPLOAD_FOLDER'] + type + "/app_config.py"
+    filename = upload_foloder + type + "/app_config.py"
     f = open(filename)
     lines = f.readlines()
     newlines = []
@@ -272,10 +275,10 @@ def get_mappers():
 
 def get_all_jobs_def():
     all_file_names = {}
-    for job_type in os.listdir(app.config['UPLOAD_FOLDER']):
+    for job_type in os.listdir(upload_foloder):
         if job_type != 'template':
 	    all_file_names[job_type] = []
-	    for name in os.listdir(app.config['UPLOAD_FOLDER'] + '/' + job_type):
+	    for name in os.listdir(upload_foloder + '/' + job_type):
 	        if name != ('__init__.py') and not name.endswith('pyc'):
                     all_file_names[job_type].append(job_type + "/" + name)
     return all_file_names
@@ -347,7 +350,7 @@ def ace():
     if request.method == 'POST':
         filename = request.form['filename']
         content = request.form['content']
-        writefile = open(app.config['UPLOAD_FOLDER'] + '/' + filename, "w")
+        writefile = open(upload_foloder + '/' + filename, "w")
         writefile.write(content)
         writefile.close()
         if 'mapper' in filename:
@@ -357,35 +360,35 @@ def ace():
     return render_template('ace.html')
 
 def duplicateJob(old, new):
-    if os.path.exists(app.config['UPLOAD_FOLDER'] + new):
+    if os.path.exists(upload_foloder + new):
         return
     new_port(new)
-    call(["mkdir", app.config['UPLOAD_FOLDER'] + new])
-    #call(["cp", "-r", ddapp.config['UPLOAD_FOLDER'] + old + "/*", app.config['UPLOAD_FOLDER'] + new])
-    subprocess.call("cp -r " + app.config['UPLOAD_FOLDER'] + old + "/* " + app.config['UPLOAD_FOLDER'] + new, shell=True)
-    call(["mv", app.config['UPLOAD_FOLDER'] + new + "/" + "test_" + old + ".py", app.config['UPLOAD_FOLDER'] + new + "/" + "test_" + new + ".py"])
-    call(["mv", app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + old + "_stream.py", app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + new + "_stream.py"])
-    call(["mv", app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + old + "_mapper.py", app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + new + "_mapper.py"])
-    call(["mv", app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + old + "_reducer.py", app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + new + "_reducer.py"])
+    call(["mkdir", upload_foloder + new])
+    #call(["cp", "-r", ddupload_foloder + old + "/*", upload_foloder + new])
+    subprocess.call("cp -r " + upload_foloder + old + "/* " + upload_foloder + new, shell=True)
+    call(["mv", upload_foloder + new + "/" + "test_" + old + ".py", upload_foloder + new + "/" + "test_" + new + ".py"])
+    call(["mv", upload_foloder + new + "/" + "PyEsReduce_" + old + "_stream.py", upload_foloder + new + "/" + "PyEsReduce_" + new + "_stream.py"])
+    call(["mv", upload_foloder + new + "/" + "PyEsReduce_" + old + "_mapper.py", upload_foloder + new + "/" + "PyEsReduce_" + new + "_mapper.py"])
+    call(["mv", upload_foloder + new + "/" + "PyEsReduce_" + old + "_reducer.py", upload_foloder + new + "/" + "PyEsReduce_" + new + "_reducer.py"])
 
     app.db.connection.sadd(JOB_TYPES_KEY, new)
     app.db.connection.set(JOB_STATUS_KEY % new, "INACTIVE")
-    config = app.config['UPLOAD_FOLDER'] + new + "/" + "app_config.py"
+    config = upload_foloder + new + "/" + "app_config.py"
     template = open(config).read()
     template = template.replace(old, new)
     makeFile(config, template)
 
-    mapper = app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + new + "_mapper.py"
+    mapper = upload_foloder + new + "/" + "PyEsReduce_" + new + "_mapper.py"
     template = open(mapper).read()
     template = template.replace(old, new)
     makeFile(mapper, template)
 
-    stream = app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + new + "_stream.py"
+    stream = upload_foloder + new + "/" + "PyEsReduce_" + new + "_stream.py"
     template = open(stream).read()
     template = template.replace(old, new)
     makeFile(stream, template)
 
-    reducer = app.config['UPLOAD_FOLDER'] + new + "/" + "PyEsReduce_" + new + "_reducer.py"
+    reducer = upload_foloder + new + "/" + "PyEsReduce_" + new + "_reducer.py"
     template = open(reducer).read()
     template = template.replace(old, new)
     makeFile(reducer, template)
@@ -396,42 +399,42 @@ def makeFile(filename, filecontent):
     file.close()
 
 def makeNormalFile(jobtype, name):
-    filename = os.path.join(app.config['UPLOAD_FOLDER'] + jobtype, name).encode("ascii")
+    filename = os.path.join(upload_foloder + jobtype, name).encode("ascii")
     makeFile(filename, "")
 
 def makeAppConfig(jobtype, desc):
-    filename = os.path.join(app.config['UPLOAD_FOLDER'] + jobtype, 'app_config.py').encode("ascii")
+    filename = os.path.join(upload_foloder + jobtype, 'app_config.py').encode("ascii")
     streamdef = jobtype+'.PyEsReduce_' + jobtype + '_stream' + '.PyEsReduce'+ jobtype + 'Stream'
     reducerdef = jobtype+'.PyEsReduce_' + jobtype + '_reducer' + '.PyEsReduce'+ jobtype + 'Reducer'
     filecontent = '#!/usr/bin/python\n'+ '# -*- coding: utf-8 -*-\n\n#Desc'+desc+'\n'+'INPUT_STREAMS = [\n    \'' +streamdef+ '\']\n'+'REDUCERS = [\n    \''+reducerdef+'\']'
     makeFile(filename, filecontent)
 
 def makeStream(jobtype):
-    filename = os.path.join(app.config['UPLOAD_FOLDER'] + jobtype, 'PyEsReduce_' + jobtype + '_stream.py').encode("ascii")
-    template = open(app.config['UPLOAD_FOLDER'] + "template/stream_template.py").read()
+    filename = os.path.join(upload_foloder + jobtype, 'PyEsReduce_' + jobtype + '_stream.py').encode("ascii")
+    template = open(upload_foloder + "template/stream_template.py").read()
     template = template.replace("CLASSNAME", "PyEsReduce"+ jobtype + "Stream")
     template = template.replace("JOBTYPE", jobtype)
     makeFile(filename, template)
 
 def makeReducer(jobtype):
-    filename = os.path.join(app.config['UPLOAD_FOLDER'] + jobtype, 'PyEsReduce_' + jobtype + '_reducer.py').encode("ascii")
-    template = open(app.config['UPLOAD_FOLDER'] + "template/reducer_template.py").read()
+    filename = os.path.join(upload_foloder + jobtype, 'PyEsReduce_' + jobtype + '_reducer.py').encode("ascii")
+    template = open(upload_foloder + "template/reducer_template.py").read()
     template = template.replace("CLASSNAME", 'PyEsReduce'+ jobtype + 'Reducer')
     template = template.replace("JOBTYPE", jobtype)
     makeFile(filename, template)
 
 def makeMapper(jobtype):
-    filename = os.path.join(app.config['UPLOAD_FOLDER'] + jobtype, 'PyEsReduce_' + jobtype + '_mapper.py').encode("ascii")
-    template = open(app.config['UPLOAD_FOLDER'] + "template/mapper_template.py").read()
+    filename = os.path.join(upload_foloder + jobtype, 'PyEsReduce_' + jobtype + '_mapper.py').encode("ascii")
+    template = open(upload_foloder + "template/mapper_template.py").read()
     template = template.replace("CLASSNAME", 'PyEsReduce'+ jobtype + 'Mapper')
     template = template.replace("JOBTYPE", jobtype)
     makeFile(filename, template)
 
 def makeTestFile(jobtype):
-    filename = os.path.join(app.config['UPLOAD_FOLDER'] + jobtype, 'test_' + jobtype + '.py').encode("ascii")
-    template = open(app.config['UPLOAD_FOLDER'] + "template/test_template.py").read()
+    filename = os.path.join(upload_foloder + jobtype, 'test_' + jobtype + '.py').encode("ascii")
+    template = open(upload_foloder + "template/test_template.py").read()
     template = template.replace("JOBTYPE", jobtype)
-    mapper_content = open(app.config['UPLOAD_FOLDER'] + jobtype + "/PyEsReduce_" + jobtype + "_mapper.py").read()
+    mapper_content = open(upload_foloder + jobtype + "/PyEsReduce_" + jobtype + "_mapper.py").read()
     mapper_content = mapper_content[mapper_content.find('def map'):]
     template = template.replace("MAPPER_CONTENT", mapper_content)
     makeFile(filename, template)
@@ -441,7 +444,7 @@ def testRunJob(jobtype):
     filename  = "/var/log/mrtest/test_" + jobtype + ".log"
     call(["rm", filename])
     call(["touch", filename])
-    subprocess.Popen("python " + app.config['UPLOAD_FOLDER'] + jobtype + "/test_" + jobtype + ".py >> " + filename + " 2>&1", shell=True)
+    subprocess.Popen("python " + upload_foloder + jobtype + "/test_" + jobtype + ".py >> " + filename + " 2>&1", shell=True)
 
 def stopJob(job):
     mappers = app.db.connection.smembers(MAPPERS_KEY)
@@ -456,10 +459,10 @@ def upload():
         if 'Auto Job Type' in request.form:
             auto = request.form['Auto Job Type']
             desc = request.form['Desc']
-            if os.path.exists(app.config['UPLOAD_FOLDER'] + auto):
+            if os.path.exists(upload_foloder + auto):
                 return render_template('upload.html')
-            call(["mkdir", app.config['UPLOAD_FOLDER'] + auto])
-            call(["cp", app.config['UPLOAD_FOLDER'] + "template/__init__.py", app.config['UPLOAD_FOLDER'] + auto + "/__init__.py"])
+            call(["mkdir", upload_foloder + auto])
+            call(["cp", upload_foloder + "template/__init__.py", upload_foloder + auto + "/__init__.py"])
             new_port(auto)
             makeAppConfig(auto, desc)
             makeStream(auto)
@@ -472,9 +475,9 @@ def upload():
         jobtype = request.form['Job Type']
         if jobtype.strip() == "":
             return render_template('upload.html')
-        call(["rm", "-rf", app.config['UPLOAD_FOLDER'] + request.form['Job Type']])
-        call(["mkdir", app.config['UPLOAD_FOLDER'] + request.form['Job Type']])
-        call(["cp", app.config['UPLOAD_FOLDER'] + "template/__init__.py", app.config['UPLOAD_FOLDER'] + request.form['Job Type'] + "/__init__.py"])
+        call(["rm", "-rf", upload_foloder + request.form['Job Type']])
+        call(["mkdir", upload_foloder + request.form['Job Type']])
+        call(["cp", upload_foloder + "template/__init__.py", upload_foloder + request.form['Job Type'] + "/__init__.py"])
         remove_port(jobtype)
         new_port(jobtype)
         app.db.connection.sadd(JOB_TYPES_KEY, jobtype)
@@ -482,19 +485,19 @@ def upload():
         file = request.files['appconfig']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'] + request.form['Job Type'], filename))
+            file.save(os.path.join(upload_foloder + request.form['Job Type'], filename))
         file = request.files['streamfile']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'] + request.form['Job Type'], filename))
+            file.save(os.path.join(upload_foloder + request.form['Job Type'], filename))
         file = request.files['mapperfile']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'] + request.form['Job Type'], filename))
+            file.save(os.path.join(upload_foloder + request.form['Job Type'], filename))
         file = request.files['reducerfile']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'] + request.form['Job Type'], filename))
+            file.save(os.path.join(upload_foloder + request.form['Job Type'], filename))
     return render_template('upload.html')
 
 @app.route("/test/<jobTest>")
@@ -528,7 +531,7 @@ def start():
                 app.db.connection.set(CURRENT_EDIT, request.form['Filename'])
                 return redirect(url_for('ace'))
             else:
-                call(["rm", "-rf", app.config['UPLOAD_FOLDER'] + request.form['Filename']])
+                call(["rm", "-rf", upload_foloder + request.form['Filename']])
                 return redirect("%s%s" % (url_for('index'), "#tab-jobs"))
         if 'Kill' in request.form:
             jobkill = request.form['Kill']
@@ -543,7 +546,7 @@ def start():
             return redirect("%s%s" % (url_for('index'), "#tab-jobs"))
         if 'Delete Job Type' in request.form:
             jobdelete = request.form['Delete Job Type']
-            shutil.rmtree(os.path.join(app.config['UPLOAD_FOLDER'] + jobdelete))
+            shutil.rmtree(os.path.join(upload_foloder + jobdelete))
             app.db.connection.srem(JOB_TYPES_KEY, jobdelete)
             os.popen('/root/refine/kill_job.sh ' + jobdelete)
             stopJob(jobdelete)
@@ -573,7 +576,7 @@ def start():
         os.popen('/root/refine/kill_job.sh ' + jobtype)
         stopJob(jobtype)
         # Traverse all the files under this job, finding the mapper file, and retrieve the mapper class name
-        for r,d,f in os.walk(app.config['UPLOAD_FOLDER'] + '/' +jobtype):
+        for r,d,f in os.walk(upload_foloder + '/' +jobtype):
             for files in f:
                 if files.endswith("_mapper.py"):
                     filename = files
