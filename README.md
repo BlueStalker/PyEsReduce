@@ -17,4 +17,5 @@ run ./server_startup.sh and you are ready to go
 Following is Simple Architecture graph to show how it works:
 ![Simple Architecture](https://github.com/BlueStalker/PyEsReduce/blob/master/PyEsSimpleArch.png)
 
-
+Better to have a preview in http://54.243.246.138
+and use admin/Rene91970Tony6472 to pass the http base auth.
